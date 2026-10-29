@@ -225,20 +225,33 @@ UI_TEMPLATE = """
             });
         }
         function playSong(url, title, thumbnail, channel) {
+            // Instant UI update so user sees metadata immediately
+            document.getElementById('player-title').innerText = title;
+            document.getElementById('player-artist').innerText = channel;
+            document.getElementById('player-img').src = thumbnail;
+            document.getElementById('mini-title').innerText = title;
+            document.getElementById('mini-artist').innerText = channel;
+            document.getElementById('mini-img').src = thumbnail;
+
             fetch('/play?url=' + encodeURIComponent(url)).then(res => res.json()).then(data => {
                 if(data.error) { alert("Error playing song. Try another track."); return; }
                 currentSongData = data;
-                document.getElementById('player-title').innerText = data.title || title;
-                document.getElementById('player-artist').innerText = data.channel || channel;
-                document.getElementById('player-img').src = data.thumbnail || thumbnail;
-                document.getElementById('mini-title').innerText = data.title || title;
-                document.getElementById('mini-artist').innerText = data.channel || channel;
-                document.getElementById('mini-img').src = data.thumbnail || thumbnail;
+                let finalTitle = data.title || title;
+                let finalArtist = data.channel || channel;
+                let finalThumb = data.thumbnail || thumbnail;
+
+                document.getElementById('player-title').innerText = finalTitle;
+                document.getElementById('player-artist').innerText = finalArtist;
+                document.getElementById('player-img').src = finalThumb;
+                document.getElementById('mini-title').innerText = finalTitle;
+                document.getElementById('mini-artist').innerText = finalArtist;
+                document.getElementById('mini-img').src = finalThumb;
+
                 let audio = document.getElementById('audioElement');
                 audio.src = data.url;
                 audio.play();
                 document.getElementById('miniPlayer').classList.add('active');
-                loadRelated(data.title || title);
+                loadRelated(finalTitle);
             }).catch(err => { alert("Network error playing song."); });
         }
         function loadRelated(query) {
@@ -318,7 +331,6 @@ def play():
         song_channel = "YouTube"
         audio_url = None
 
-        # Try extracting via yt-dlp first
         ydl_opts = {
             'format': 'bestaudio/best',
             'quiet': True,
@@ -342,7 +354,7 @@ def play():
             except Exception:
                 pass
 
-        # Robust Public Invidious API Mirror fallback if yt-dlp is blocked by Render IP
+        # Invidious Public API Mirror fallback
         if not audio_url and v_id:
             try:
                 api_url = f"https://inv.tux.im/api/v1/videos/{v_id}"
@@ -364,7 +376,6 @@ def play():
             except Exception as api_e:
                 print("API Fallback Error:", str(api_e))
 
-        # Final fallback stream mirror
         if not audio_url and v_id:
             audio_url = f"https://rr1---sn-oxuxgnsz.googlevideo.com/videoplayback?expire=3744144000&ei=A3XpW4_...&id={v_id}"
 
