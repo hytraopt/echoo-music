@@ -1,54 +1,6 @@
-from flask import Flask, render_template_string, request, jsonify
-import urllib.request
-import json
-import os
+from flask import Flask, render_template_string
 
 app = Flask(__name__)
-
-recent_songs = []
-saved_songs = []
-
-# Multiple robust public API mirrors for lightning-fast search
-API_INSTANCES = [
-    "https://pipedapi.adminforge.de",
-    "https://pipedapi.kavin.rocks",
-    "https://vid.puffyan.us"
-]
-
-DEFAULT_TRACKS = [
-    {"title": "Global Top Hits Mix", "url": "https://www.youtube.com/watch?v=2Vv-BfVoq4g", "thumbnail": "https://i.ytimg.com/vi/2Vv-BfVoq4g/hqdefault.jpg", "channel": "YouTube Music", "id": "2Vv-BfVoq4g"},
-    {"title": "Latest Bollywood Chartbusters", "url": "https://www.youtube.com/watch?v=80W5vUv7R3Y", "thumbnail": "https://i.ytimg.com/vi/80W5vUv7R3Y/hqdefault.jpg", "channel": "T-Series", "id": "80W5vUv7R3Y"},
-    {"title": "Lo-Fi Chill Beats to Relax", "url": "https://www.youtube.com/watch?v=5qap5aO4i9A", "thumbnail": "https://i.ytimg.com/vi/5qap5aO4i9A/hqdefault.jpg", "channel": "Lofi Girl", "id": "5qap5aO4i9A"},
-    {"title": "Trending Viral Remix 2026", "url": "https://www.youtube.com/watch?v=kJQP7kiw5Fk", "thumbnail": "https://i.ytimg.com/vi/kJQP7kiw5Fk/hqdefault.jpg", "channel": "Mega Hits", "id": "kJQP7kiw5Fk"}
-]
-
-def search_public_api(query):
-    for instance in API_INSTANCES:
-        try:
-            url = f"{instance}/search?q={urllib.parse.quote(query)}&filter=music_songs"
-            req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
-            with urllib.request.urlopen(req, timeout=4) as response:
-                data = json.loads(response.read().decode())
-                results = []
-                items = data.get('items', data) if isinstance(data, list) or 'items' in data else []
-                for item in items[:15]:
-                    v_id = item.get('videoId') or item.get('id')
-                    title = item.get('title')
-                    thumbnail = item.get('thumbnail') or f"https://i.ytimg.com/vi/{v_id}/hqdefault.jpg"
-                    channel = item.get('uploader') or item.get('author') or "YouTube"
-                    if v_id and title:
-                        results.append({
-                            "title": title,
-                            "url": f"https://www.youtube.com/watch?v={v_id}",
-                            "thumbnail": thumbnail,
-                            "channel": channel,
-                            "id": v_id
-                        })
-                if results:
-                    return results
-        except Exception:
-            continue
-    return DEFAULT_TRACKS
 
 UI_TEMPLATE = """
 <!DOCTYPE html>
@@ -56,7 +8,7 @@ UI_TEMPLATE = """
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Echoo Music Pro</title>
+    <title>Echoo Music Ultimate</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
         body { background-color: #030305; color: #fff; display: flex; flex-direction: column; align-items: center; min-height: 100vh; padding-bottom: 140px; overflow-x: hidden; }
@@ -107,14 +59,13 @@ UI_TEMPLATE = """
         .player-view.active { display: flex; }
         .player-top { display: flex; justify-content: space-between; align-items: center; width: 100%; }
         .player-btn-action { color: #ff2d55; background: rgba(255,45,85,0.12); backdrop-filter: blur(20px); border: 1px solid rgba(255,45,85,0.3); padding: 8px 18px; border-radius: 20px; font-size: 13px; font-weight: 700; cursor: pointer; }
-        .artwork-box { width: 280px; height: 280px; margin: 0 auto; border-radius: 32px; overflow: hidden; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.15); box-shadow: 0 30px 60px rgba(0,0,0,0.8); position: relative; }
+        .artwork-box { width: 280px; height: 280px; margin: 0 auto; border-radius: 32px; overflow: hidden; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.15); box-shadow: 0 30px 60px rgba(0,0,0,0.8); }
         .artwork-box img { width: 100%; height: 100%; object-fit: cover; }
         
-        #youtube-player-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; pointer-events: none; }
-
         .player-meta { width: 100%; padding: 0 4px; }
         .m-title { font-size: 21px; font-weight: 800; color: #fff; margin-bottom: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: -0.5px; }
         .m-artist { font-size: 15px; color: #8e8e93; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 600; }
+        audio { width: 100%; height: 46px; border-radius: 23px; outline: none; }
         .related-box { max-height: 150px; overflow-y: auto; width: 100%; display: flex; flex-direction: column; gap: 8px; scrollbar-width: none; }
 
         .search-modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(3, 3, 5, 0.94); backdrop-filter: blur(50px); -webkit-backdrop-filter: blur(50px); z-index: 1500; flex-direction: column; padding: 25px 20px; }
@@ -123,13 +74,12 @@ UI_TEMPLATE = """
         .search-input-box { flex: 1; background: rgba(255, 255, 255, 0.06); backdrop-filter: blur(25px); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 26px; padding: 13px 20px; color: white; outline: none; font-size: 16px; font-weight: 600; }
         .close-search { background: none; border: none; color: #ff2d55; font-weight: 700; font-size: 15px; cursor: pointer; }
     </style>
-    <script src="https://www.youtube.com/iframe_api"></script>
 </head>
 <body>
     <div class="top-header">
         <div class="brand-box">
             <div class="app-brand">Echoo</div>
-            <div class="version-tag">VER: v4.2.0-PRO</div>
+            <div class="version-tag">VER: v4.3.0-ULTIMATE</div>
         </div>
         <div class="search-icon-btn" onclick="openSearchModal()" title="Search">
             <svg viewBox="0 0 24 24">
@@ -147,7 +97,7 @@ UI_TEMPLATE = """
     <div class="featured-box">
         <div>
             <div class="feat-title">Liquid Glass Experience</div>
-            <div class="feat-desc">v4.2.0 Update: Multi-API Search & Seamless Browser Playback.</div>
+            <div class="feat-desc">v4.3 Ultimate Update: Client-Side Global Search & Direct Audio Playback.</div>
         </div>
         <button class="feat-btn" onclick="loadRecommended()">Explore Beats</button>
     </div>
@@ -175,14 +125,12 @@ UI_TEMPLATE = """
             <span style="font-size: 11px; font-weight: 800; color: #8e8e93; letter-spacing: 1.5px;">NOW PLAYING</span>
             <button class="player-btn-action" onclick="saveCurrentSong()">Save</button>
         </div>
-        <div class="artwork-box">
-            <img id="player-img" src="" alt="Art">
-            <div id="youtube-player-container"></div>
-        </div>
+        <div class="artwork-box"><img id="player-img" src="" alt="Art"></div>
         <div class="player-meta">
             <div class="m-title" id="player-title">Song Title</div>
             <div class="m-artist" id="player-artist">Artist Name</div>
         </div>
+        <audio id="audioElement" controls autoplay onended="playNextRelated()" onplay="updatePlayState(true)" onpause="updatePlayState(false)"></audio>
         <div style="font-size: 15px; font-weight: 800; color: #fff;">Up Next</div>
         <div class="related-box" id="related-list"></div>
     </div>
@@ -197,31 +145,41 @@ UI_TEMPLATE = """
         <div class="content-area" id="search-results-area" style="max-width: 100%; padding: 0; overflow-y: auto; max-height: calc(100vh - 120px);"></div>
     </div>
     <script>
-        let ytPlayer;
+        const API_INSTANCES = [
+            "https://pipedapi.adminforge.de",
+            "https://pipedapi.kavin.rocks",
+            "https://vid.puffyan.us"
+        ];
+
         let currentSongData = null;
         let relatedQueue = [];
-
-        function onYouTubeIframeAPIReady() {
-            ytPlayer = new YT.Player('youtube-player-container', {
-                height: '100%',
-                width: '100%',
-                playerVars: { 'autoplay': 1, 'controls': 0 },
-                events: {
-                    'onStateChange': onPlayerStateChange
-                }
-            });
-        }
+        let recentSongs = [];
+        let savedSongs = [];
 
         window.onload = function() { loadRecommended(); };
 
-        function loadRecommended() {
-            document.getElementById('sec-title').innerText = "Recommended For You";
-            let area = document.getElementById('main-content-area');
-            area.innerHTML = '<div style="color: #8e8e93; text-align: center; padding: 40px; font-size: 13px;">Curating beats...</div>';
-            fetch('/search', { method: 'POST', headers: {'Content-Type': 'application/x-www-form-urlencoded'}, body: 'query=top global hits 2026' }).then(res => res.json()).then(data => { renderSongList(data, area); });
+        async function fetchFromApi(endpoint) {
+            for (let instance of API_INSTANCES) {
+                try {
+                    let res = await fetch(instance + endpoint);
+                    let data = await res.json();
+                    if (data) return data;
+                } catch(e) { continue; }
+            }
+            return null;
         }
 
-        function filterCategory(cat, element) {
+        async function loadRecommended() {
+            document.getElementById('sec-title').innerText = "Recommended For You";
+            let area = document.getElementById('main-content-area');
+            area.innerHTML = '<div style="color: #8e8e93; text-align: center; padding: 40px; font-size: 13px;">Curating global hits...</div>';
+            
+            let data = await fetchFromApi('/search?q=top%20global%20hits%20music&filter=music_songs');
+            let items = data ? (data.items || data) : [];
+            renderSongList(items, area);
+        }
+
+        async function filterCategory(cat, element) {
             document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
             element.classList.add('active');
             let query = "top global hits";
@@ -229,10 +187,14 @@ UI_TEMPLATE = """
             if(cat === 'Bollywood') query = "latest bollywood hits audio";
             if(cat === 'Lo-Fi') query = "lofi chill beats";
             if(cat === 'Remix') query = "bass boosted remix songs";
+            
             let area = document.getElementById('main-content-area');
             document.getElementById('sec-title').innerText = cat + " Selection";
             area.innerHTML = '<div style="color: #8e8e93; text-align: center; padding: 40px; font-size: 13px;">Loading...</div>';
-            fetch('/search', { method: 'POST', headers: {'Content-Type': 'application/x-www-form-urlencoded'}, body: 'query=' + encodeURIComponent(query) }).then(res => res.json()).then(data => { renderSongList(data, area); });
+            
+            let data = await fetchFromApi('/search?q=' + encodeURIComponent(query) + '&filter=music_songs');
+            let items = data ? (data.items || data) : [];
+            renderSongList(items, area);
         }
 
         function switchTab(tabName, btnElement) {
@@ -241,37 +203,43 @@ UI_TEMPLATE = """
             let area = document.getElementById('main-content-area');
             let title = document.getElementById('sec-title');
             if(tabName === 'home') { loadRecommended(); }
-            else if(tabName === 'recent') { title.innerText = "Listening History"; fetch('/get-recent').then(res => res.json()).then(data => renderSongList(data, area)); }
-            else if(tabName === 'saved') { title.innerText = "Liked Songs"; fetch('/get-saved').then(res => res.json()).then(data => renderSongList(data, area)); }
+            else if(tabName === 'recent') { title.innerText = "Listening History"; renderSongList(recentSongs, area); }
+            else if(tabName === 'saved') { title.innerText = "Liked Songs"; renderSongList(savedSongs, area); }
         }
 
         function openSearchModal() { document.getElementById('searchModal').classList.add('active'); document.getElementById('query-input').focus(); }
         function closeSearchModal() { document.getElementById('searchModal').classList.remove('active'); }
         function handleSearchKey(e) { if(e.key === 'Enter') performSearch(); }
 
-        function performSearch() {
+        async function performSearch() {
             let q = document.getElementById('query-input').value.trim();
             if(!q) return;
             let area = document.getElementById('search-results-area');
-            area.innerHTML = '<div style="color: #8e8e93; text-align: center; padding: 40px; font-size: 13px;">Searching...</div>';
-            fetch('/search', { method: 'POST', headers: {'Content-Type': 'application/x-www-form-urlencoded'}, body: 'query=' + encodeURIComponent(q) }).then(res => res.json()).then(data => { renderSongList(data, area); });
+            area.innerHTML = '<div style="color: #8e8e93; text-align: center; padding: 40px; font-size: 13px;">Searching global library...</div>';
+            
+            let data = await fetchFromApi('/search?q=' + encodeURIComponent(q) + '&filter=music_songs');
+            let items = data ? (data.items || data) : [];
+            renderSongList(items, area);
         }
 
         function renderSongList(items, container) {
             container.innerHTML = '';
             if(!items || items.length === 0) { container.innerHTML = '<div style="color: #8e8e93; text-align: center; padding: 40px; font-size: 13px;">No songs found.</div>'; return; }
             items.forEach((item) => {
+                let vId = item.videoId || item.id;
+                let title = item.title;
+                let thumbnail = item.thumbnail || `https://i.ytimg.com/vi/${vId}/hqdefault.jpg`;
+                let channel = item.uploader || item.author || "YouTube";
+
                 let card = document.createElement('div');
                 card.className = 'song-card';
-                card.innerHTML = `<img src="${item.thumbnail}" alt="Art"><div class="song-info"><div class="song-title">${item.title}</div><div class="song-artist">${item.channel}</div></div>`;
-                card.onclick = () => { playSong(item.id, item.title, item.thumbnail, item.channel, item.url); closeSearchModal(); };
+                card.innerHTML = `<img src="${thumbnail}" alt="Art"><div class="song-info"><div class="song-title">${title}</div><div class="song-artist">${channel}</div></div>`;
+                card.onclick = () => { playSong(vId, title, thumbnail, channel); closeSearchModal(); };
                 container.appendChild(card);
             });
         }
 
-        function playSong(id, title, thumbnail, channel, url) {
-            currentSongData = { id, title, thumbnail, channel, url };
-            
+        async function playSong(vId, title, thumbnail, channel) {
             document.getElementById('player-title').innerText = title;
             document.getElementById('player-artist').innerText = channel;
             document.getElementById('player-img').src = thumbnail;
@@ -279,57 +247,77 @@ UI_TEMPLATE = """
             document.getElementById('mini-artist').innerText = channel;
             document.getElementById('mini-img').src = thumbnail;
 
-            if (ytPlayer && ytPlayer.loadVideoById) {
-                ytPlayer.loadVideoById(id);
+            let audioUrl = null;
+            let streamData = await fetchFromApi('/streams/' + vId);
+            if (streamData && streamData.audioStreams) {
+                let bestStream = streamData.audioStreams.find(s => s.url) || streamData.audioStreams[0];
+                if (bestStream) audioUrl = bestStream.url;
             }
 
+            if (!audioUrl) {
+                alert("Stream unavailable for this track. Try another.");
+                return;
+            }
+
+            currentSongData = { id: vId, title, thumbnail, channel, url: audioUrl };
+            
+            let audio = document.getElementById('audioElement');
+            audio.src = audioUrl;
+            audio.play();
+            
             document.getElementById('miniPlayer').classList.add('active');
             
-            fetch('/save-recent', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(currentSongData) });
+            if(!recent.some(s => s.id === vId)) {
+                recentSongs.unshift(currentSongData);
+                if(recentSongs.length > 15) recentSongs.pop();
+            }
             loadRelated(title);
         }
 
-        function onPlayerStateChange(event) {
-            let btn = document.getElementById('miniPlayBtn');
-            if (event.data == YT.PlayerState.PLAYING) {
-                btn.innerText = '❚❚';
-            } else if (event.data == YT.PlayerState.PAUSED || event.data == YT.PlayerState.ENDED) {
-                btn.innerText = '▶';
-                if(event.data == YT.PlayerState.ENDED) { playNextRelated(); }
-            }
-        }
+        async function loadRelated(query) {
+            let data = await fetchFromApi('/search?q=' + encodeURIComponent(query + ' remix') + '&filter=music_songs');
+            let items = data ? (data.items || data) : [];
+            relatedQueue = items;
+            let relList = document.getElementById('related-list');
+            relList.innerHTML = '';
+            items.forEach(item => {
+                let vId = item.videoId || item.id;
+                let title = item.title;
+                let thumbnail = item.thumbnail || `https://i.ytimg.com/vi/${vId}/hqdefault.jpg`;
+                let channel = item.uploader || item.author || "YouTube";
 
-        function loadRelated(query) {
-            fetch('/search', { method: 'POST', headers: {'Content-Type': 'application/x-www-form-urlencoded'}, body: 'query=' + encodeURIComponent(query + " remix") }).then(res => res.json()).then(data => {
-                relatedQueue = data;
-                let relList = document.getElementById('related-list');
-                relList.innerHTML = '';
-                data.forEach(item => {
-                    let rCard = document.createElement('div');
-                    rCard.className = 'song-card';
-                    rCard.style.padding = '6px 10px';
-                    rCard.innerHTML = `<img src="${item.thumbnail}" style="width: 38px; height: 38px;" alt="Art"><div class="song-info"><div class="song-title" style="font-size: 13px;">${item.title}</div></div>`;
-                    rCard.onclick = () => playSong(item.id, item.title, item.thumbnail, item.channel, item.url);
-                    relList.appendChild(rCard);
-                });
+                let rCard = document.createElement('div');
+                rCard.className = 'song-card';
+                rCard.style.padding = '6px 10px';
+                rCard.innerHTML = `<img src="${thumbnail}" style="width: 38px; height: 38px;" alt="Art"><div class="song-info"><div class="song-title" style="font-size: 13px;">${title}</div></div>`;
+                rCard.onclick = () => playSong(vId, title, thumbnail, channel);
+                relList.appendChild(rCard);
             });
         }
 
-        function playNextRelated() { if(relatedQueue.length > 0) { let nextSong = relatedQueue.shift(); playSong(nextSong.id, nextSong.title, nextSong.thumbnail, nextSong.channel, nextSong.url); } }
-        
-        function togglePlayPause() {
-            if (!ytPlayer) return;
-            let state = ytPlayer.getPlayerState();
-            if (state == YT.PlayerState.PLAYING) {
-                ytPlayer.pauseVideo();
-            } else {
-                ytPlayer.playVideo();
+        function playNextRelated() {
+            if(relatedQueue.length > 0) {
+                let nextSong = relatedQueue.shift();
+                playSong(nextSong.videoId || nextSong.id, nextSong.title, nextSong.thumbnail, nextSong.uploader || nextSong.author || "YouTube");
             }
+        }
+
+        function togglePlayPause() {
+            let audio = document.getElementById('audioElement');
+            if(audio.paused) { audio.play(); } else { audio.pause(); }
+        }
+
+        function updatePlayState(isPlaying) {
+            let btn = document.getElementById('miniPlayBtn');
+            btn.innerText = isPlaying ? '❚❚' : '▶';
         }
 
         function saveCurrentSong() {
             if(!currentSongData) return;
-            fetch('/save-song', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(currentSongData) }).then(res => res.json()).then(msg => { alert("Song saved to Liked list!"); });
+            if(!savedSongs.some(s => s.id === currentSongData.id)) {
+                savedSongs.unshift(currentSongData);
+            }
+            alert("Song saved to Liked list!");
         }
 
         function openPlayer() { if(!currentSongData) return; document.getElementById('playerOverlay').classList.add('active'); }
@@ -342,35 +330,6 @@ UI_TEMPLATE = """
 @app.route('/')
 def index():
     return render_template_string(UI_TEMPLATE)
-
-@app.route('/search', methods=['POST'])
-def search():
-    query = request.form.get('query', 'top global hits')
-    res = search_public_api(query)
-    return jsonify(res if res else DEFAULT_TRACKS)
-
-@app.route('/save-recent', methods=['POST'])
-def save_recent():
-    song = request.json
-    if song and song not in recent_songs:
-        recent_songs.insert(0, song)
-        if len(recent_songs) > 15: recent_songs.pop()
-    return jsonify({"status": "success"})
-
-@app.route('/get-recent')
-def get_recent():
-    return jsonify(recent_songs)
-
-@app.route('/get-saved')
-def get_saved():
-    return jsonify(saved_songs)
-
-@app.route('/save-song', methods=['POST'])
-def save_song():
-    song = request.json
-    if song and song not in saved_songs:
-        saved_songs.insert(0, song)
-    return jsonify({"status": "success"})
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
