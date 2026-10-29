@@ -14,7 +14,7 @@ def fetch_home_recommendations():
     if home_recommendations:
         return home_recommendations
     try:
-        cmd = 'yt-dlp "ytsearch10:top global hits popular songs audio" -j --flat-playlist --no-warnings'
+        cmd = 'python3 -m yt_dlp "ytsearch10:top global hits popular songs audio" -j --flat-playlist --no-warnings'
         output = subprocess.check_output(cmd, shell=True, text=True)
         results = []
         for line in output.strip().split('\n'):
@@ -260,7 +260,7 @@ def search():
     query = request.form.get('query')
     results = []
     try:
-        cmd = f'yt-dlp "ytsearch6:{query}" -j --flat-playlist --no-warnings'
+        cmd = f'python3 -m yt_dlp "ytsearch6:{query}" -j --flat-playlist --no-warnings'
         output = subprocess.check_output(cmd, shell=True, text=True)
         for line in output.strip().split('\n'):
             if line:
@@ -278,7 +278,7 @@ def search():
 def play():
     video_url = request.args.get('url')
     try:
-        cmd = f'yt-dlp -j -f bestaudio --no-warnings "{video_url}"'
+        cmd = f'python3 -m yt_dlp -j -f bestaudio --no-warnings "{video_url}"'
         output = subprocess.check_output(cmd, shell=True, text=True)
         data = json.loads(output)
         song_data = {
