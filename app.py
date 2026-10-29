@@ -1,6 +1,5 @@
 from flask import Flask, render_template_string, request, jsonify
-import subprocess
-import json
+import yt_dlp
 import os
 
 app = Flask(__name__)
@@ -14,20 +13,23 @@ def fetch_home_recommendations():
     if home_recommendations:
         return home_recommendations
     try:
-        cmd = 'python3 -m yt_dlp "ytsearch10:top global hits popular songs audio" -j --flat-playlist --no-warnings'
-        output = subprocess.check_output(cmd, shell=True, text=True)
-        results = []
-        for line in output.strip().split('\n'):
-            if line:
-                data = json.loads(line)
-                url = data.get('url') or f"https://www.youtube.com/watch?v={data.get('id')}"
-                title = data.get('title')
-                thumbnail = data.get('thumbnail') or f"https://i.ytimg.com/vi/{data.get('id')}/hqdefault.jpg"
-                channel = data.get('uploader') or data.get('channel') or "YouTube"
+        ydl_opts = {
+            'extract_flat': True,
+            'quiet': True,
+            'no_warnings': True,
+        }
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info("ytsearch10:top global hits popular songs audio", download=False)
+            results = []
+            for entry in info.get('entries', []):
+                url = entry.get('url') or f"https://www.youtube.com/watch?v={entry.get('id')}"
+                title = entry.get('title')
+                thumbnail = entry.get('thumbnail') or f"https://i.ytimg.com/vi/{entry.get('id')}/hqdefault.jpg"
+                channel = entry.get('uploader') or entry.get('channel') or "YouTube"
                 results.append({"title": title, "url": url, "thumbnail": thumbnail, "channel": channel})
-        home_recommendations = results
+            home_recommendations = results
     except Exception as e:
-        pass
+        print("Home Error:", str(e))
     return home_recommendations
 
 UI_TEMPLATE = """
@@ -193,7 +195,7 @@ UI_TEMPLATE = """
         }
         function renderSongList(items, container) {
             container.innerHTML = '';
-            if(items.length === 0) { container.innerHTML = '<div style="color: #8e8e93; text-align: center; padding: 40px; font-size: 13px;">No songs found.</div>'; return; }
+            if(!items || items.length === 0) { container.innerHTML = '<div style="color: #8e8e93; text-align: center; padding: 40px; font-size: 13px;">No songs found.</div>'; return; }
             items.forEach((item) => {
                 let card = document.createElement('div');
                 card.className = 'song-card';
@@ -204,6 +206,7 @@ UI_TEMPLATE = """
         }
         function playSong(url) {
             fetch('/play?url=' + encodeURIComponent(url)).then(res => res.json()).then(data => {
+                if(data.error) { alert("Error playing song"); return; }
                 currentSongData = data;
                 document.getElementById('player-title').innerText = data.title;
                 document.getElementById('player-artist').innerText = data.channel;
@@ -260,38 +263,47 @@ def search():
     query = request.form.get('query')
     results = []
     try:
-        cmd = f'python3 -m yt_dlp "ytsearch6:{query}" -j --flat-playlist --no-warnings'
-        output = subprocess.check_output(cmd, shell=True, text=True)
-        for line in output.strip().split('\n'):
-            if line:
-                data = json.loads(line)
-                url = data.get('url') or f"https://www.youtube.com/watch?v={data.get('id')}"
-                title = data.get('title')
-                thumbnail = data.get('thumbnail') or f"https://i.ytimg.com/vi/{data.get('id')}/hqdefault.jpg"
-                channel = data.get('uploader') or data.get('channel') or "YouTube"
+        ydl_opts = {
+            'extract_flat': True,
+            'quiet': True,
+            'no_warnings': True,
+        }
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(f"ytsearch6:{query}", download=False)
+            for entry in info.get('entries', []):
+                url = entry.get('url') or f"https://www.youtube.com/watch?v={entry.get('id')}"
+                title = entry.get('title')
+                thumbnail = entry.get('thumbnail') or f"https://i.ytimg.com/vi/{entry.get('id')}/hqdefault.jpg"
+                channel = entry.get('uploader') or entry.get('channel') or "YouTube"
                 results.append({"title": title, "url": url, "thumbnail": thumbnail, "channel": channel})
     except Exception as e:
-        pass
+        print("Search Error:", str(e))
     return jsonify(results)
 
 @app.route('/play')
 def play():
     video_url = request.args.get('url')
     try:
-        cmd = f'python3 -m yt_dlp -j -f bestaudio --no-warnings "{video_url}"'
-        output = subprocess.check_output(cmd, shell=True, text=True)
-        data = json.loads(output)
-        song_data = {
-            "title": data.get('title'),
-            "url": data.get('url'),
-            "thumbnail": data.get('thumbnail'),
-            "channel": data.get('uploader') or data.get('channel')
+        ydl_opts = {
+            'format': 'bestaudio',
+            'quiet': True,
+            'no_warnings': True,
+            'noplaylist': True
         }
-        if song_data not in recent_songs:
-            recent_songs.insert(0, song_data)
-            if len(recent_songs) > 15: recent_songs.pop()
-        return jsonify(song_data)
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(video_url, download=False)
+            song_data = {
+                "title": info.get('title'),
+                "url": info.get('url'),
+                "thumbnail": info.get('thumbnail'),
+                "channel": info.get('uploader') or info.get('channel') or "YouTube"
+            }
+            if song_data not in recent_songs:
+                recent_songs.insert(0, song_data)
+                if len(recent_songs) > 15: recent_songs.pop()
+            return jsonify(song_data)
     except Exception as e:
+        print("Play Error:", str(e))
         return jsonify({"error": str(e)})
 
 @app.route('/get-recent')
