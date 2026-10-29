@@ -1,17 +1,33 @@
 from flask import Flask, render_template_string, request, jsonify
+import yt_dlp
 
 app = Flask(__name__)
 
 recent_songs = []
 saved_songs = []
 
-DEFAULT_TRACKS = [
-    {"title": "Global Top Hits Mix", "url": "https://www.youtube.com/watch?v=2Vv-BfVoq4g", "thumbnail": "https://i.ytimg.com/vi/2Vv-BfVoq4g/hqdefault.jpg", "channel": "YouTube Music", "id": "2Vv-BfVoq4g"},
-    {"title": "Latest Bollywood Chartbusters", "url": "https://www.youtube.com/watch?v=80W5vUv7R3Y", "thumbnail": "https://i.ytimg.com/vi/80W5vUv7R3Y/hqdefault.jpg", "channel": "T-Series", "id": "80W5vUv7R3Y"},
-    {"title": "Lo-Fi Chill Beats to Relax", "url": "https://www.youtube.com/watch?v=5qap5aO4i9A", "thumbnail": "https://i.ytimg.com/vi/5qap5aO4i9A/hqdefault.jpg", "channel": "Lofi Girl", "id": "5qap5aO4i9A"},
-    {"title": "Trending Viral Remix 2026", "url": "https://www.youtube.com/watch?v=kJQP7kiw5Fk", "thumbnail": "https://i.ytimg.com/vi/kJQP7kiw5Fk/hqdefault.jpg", "channel": "Mega Hits", "id": "kJQP7kiw5Fk"},
-    {"title": "Electronic Dance Party", "url": "https://www.youtube.com/watch?v=36YnV9STBqc", "thumbnail": "https://i.ytimg.com/vi/36YnV9STBqc/hqdefault.jpg", "channel": "EDM Nation", "id": "36YnV9STBqc"}
-]
+def fetch_youtube_results(query):
+    try:
+        ydl_opts = {
+            'extract_flat': True,
+            'quiet': True,
+            'no_warnings': True,
+        }
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(f"ytsearch15:{query}", download=False)
+            results = []
+            for entry in info.get('entries', []):
+                v_id = entry.get('id')
+                if not v_id: continue
+                url = entry.get('url') or f"https://www.youtube.com/watch?v={v_id}"
+                title = entry.get('title') or "Popular Track"
+                thumbnail = entry.get('thumbnail') or f"https://i.ytimg.com/vi/{v_id}/hqdefault.jpg"
+                channel = entry.get('uploader') or entry.get('channel') or "YouTube"
+                results.append({"title": title, "url": url, "thumbnail": thumbnail, "channel": channel, "id": v_id})
+            return results
+    except Exception as e:
+        print("Search Error:", str(e))
+        return []
 
 UI_TEMPLATE = """
 <!DOCTYPE html>
@@ -71,7 +87,6 @@ UI_TEMPLATE = """
         .artwork-box { width: 280px; height: 280px; margin: 0 auto; border-radius: 32px; overflow: hidden; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.15); box-shadow: 0 30px 60px rgba(0,0,0,0.8); position: relative; }
         .artwork-box img { width: 100%; height: 100%; object-fit: cover; }
         
-        /* Embedded YouTube Audio Player Frame */
         #youtube-player-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; pointer-events: none; }
 
         .player-meta { width: 100%; padding: 0 4px; }
@@ -85,7 +100,6 @@ UI_TEMPLATE = """
         .search-input-box { flex: 1; background: rgba(255, 255, 255, 0.06); backdrop-filter: blur(25px); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 26px; padding: 13px 20px; color: white; outline: none; font-size: 16px; font-weight: 600; }
         .close-search { background: none; border: none; color: #ff2d55; font-weight: 700; font-size: 15px; cursor: pointer; }
     </style>
-    <!-- YouTube Iframe API -->
     <script src="https://www.youtube.com/iframe_api"></script>
 </head>
 <body>
@@ -107,7 +121,7 @@ UI_TEMPLATE = """
     <div class="featured-box">
         <div>
             <div class="feat-title">Liquid Glass Experience</div>
-            <div class="feat-desc">Direct YouTube audio embedding. 100% working playback.</div>
+            <div class="feat-desc">Unlimited search & flawless playback.</div>
         </div>
         <button class="feat-btn" onclick="loadRecommended()">Explore Beats</button>
     </div>
@@ -178,7 +192,7 @@ UI_TEMPLATE = """
             document.getElementById('sec-title').innerText = "Recommended For You";
             let area = document.getElementById('main-content-area');
             area.innerHTML = '<div style="color: #8e8e93; text-align: center; padding: 40px; font-size: 13px;">Curating beats...</div>';
-            fetch('/get-home').then(res => res.json()).then(data => { renderSongList(data, area); });
+            fetch('/search', { method: 'POST', headers: {'Content-Type': 'application/x-www-form-urlencoded'}, body: 'query=top global hits 2026' }).then(res => res.json()).then(data => { renderSongList(data, area); });
         }
 
         function filterCategory(cat, element) {
@@ -186,7 +200,7 @@ UI_TEMPLATE = """
             element.classList.add('active');
             let query = "top global hits";
             if(cat === 'Trending') query = "trending viral music 2026";
-            if(cat === 'Bollywood') query = "latest bollywood hits";
+            if(cat === 'Bollywood') query = "latest bollywood hits audio";
             if(cat === 'Lo-Fi') query = "lofi chill beats";
             if(cat === 'Remix') query = "bass boosted remix songs";
             let area = document.getElementById('main-content-area');
@@ -245,7 +259,6 @@ UI_TEMPLATE = """
 
             document.getElementById('miniPlayer').classList.add('active');
             
-            // Log to recent
             fetch('/save-recent', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(currentSongData) });
             loadRelated(title);
         }
@@ -304,16 +317,11 @@ UI_TEMPLATE = """
 def index():
     return render_template_string(UI_TEMPLATE)
 
-@app.route('/get-home')
-def get_home():
-    return jsonify(DEFAULT_TRACKS)
-
 @app.route('/search', methods=['POST'])
 def search():
-    query = request.form.get('query', '').lower()
-    # Filter or return default tracks matching query or general hits
-    filtered = [t for t in DEFAULT_TRACKS if query in t['title'].lower()]
-    return jsonify(filtered if filtered else DEFAULT_TRACKS)
+    query = request.form.get('query', 'top global hits')
+    results = fetch_youtube_results(query)
+    return jsonify(results)
 
 @app.route('/save-recent', methods=['POST'])
 def save_recent():
