@@ -17,7 +17,7 @@ def fetch_home_recommendations():
             'extract_flat': True,
             'quiet': True,
             'no_warnings': True,
-            'extractor_args': {'youtube': {'player_client': ['ios', 'web']}}
+            'extractor_args': {'youtube': {'player_client': ['ios', 'android']}}
         }
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info("ytsearch10:top global hits popular songs audio", download=False)
@@ -42,52 +42,54 @@ UI_TEMPLATE = """
     <title>Echoo Music Pro</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", sans-serif; }
-        body { background-color: #060608; color: #fff; display: flex; flex-direction: column; align-items: center; min-height: 100vh; padding-bottom: 140px; overflow-x: hidden; }
-        .top-header { width: 100%; max-width: 420px; padding: 22px 20px 10px 20px; display: flex; justify-content: space-between; align-items: center; }
-        .app-brand { font-size: 24px; font-weight: 800; letter-spacing: -0.5px; background: linear-gradient(135deg, #fa243c, #ff6b81); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .search-icon-btn { background: rgba(28, 28, 30, 0.7); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fa243c; cursor: pointer; }
-        .chips-container { width: 100%; max-width: 420px; padding: 0 20px; display: flex; gap: 8px; margin-bottom: 18px; overflow-x: auto; scrollbar-width: none; }
+        body { background-color: #040406; color: #fff; display: flex; flex-direction: column; align-items: center; min-height: 100vh; padding-bottom: 140px; overflow-x: hidden; }
+        .top-header { width: 100%; max-width: 420px; padding: 24px 20px 12px 20px; display: flex; justify-content: space-between; align-items: center; }
+        .app-brand { font-size: 26px; font-weight: 800; letter-spacing: -0.5px; background: linear-gradient(135deg, #ff2a5f, #ff7e5f); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .search-icon-btn { background: rgba(255, 255, 255, 0.06); backdrop-filter: blur(25px); border: 1px solid rgba(255,255,255,0.1); width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #ff2a5f; cursor: pointer; transition: 0.2s; }
+        .search-icon-btn:active { transform: scale(0.92); }
+        .chips-container { width: 100%; max-width: 420px; padding: 0 20px; display: flex; gap: 10px; margin-bottom: 18px; overflow-x: auto; scrollbar-width: none; }
         .chips-container::-webkit-scrollbar { display: none; }
-        .chip { background: rgba(28, 28, 30, 0.6); backdrop-filter: blur(15px); border: 1px solid rgba(255,255,255,0.08); padding: 7px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; color: #8e8e93; cursor: pointer; white-space: nowrap; }
-        .chip.active { background: #fa243c; color: #fff; border-color: #fa243c; box-shadow: 0 4px 15px rgba(250,36,60,0.4); }
-        .featured-box { width: calc(100% - 40px); max-width: 380px; height: 130px; background: linear-gradient(135deg, #1c1c1e, #2c2c2e); border-radius: 24px; padding: 18px; display: flex; flex-direction: column; justify-content: space-between; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 10px 30px rgba(0,0,0,0.5); margin: 0 auto 20px auto; position: relative; overflow: hidden; }
-        .feat-title { font-size: 15px; font-weight: 700; color: #fff; margin-bottom: 3px; }
-        .feat-desc { font-size: 12px; color: #8e8e93; }
-        .feat-btn { background: #fa243c; color: white; border: none; padding: 6px 14px; border-radius: 14px; font-size: 11px; font-weight: 700; width: fit-content; cursor: pointer; }
+        .chip { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(15px); border: 1px solid rgba(255,255,255,0.08); padding: 8px 18px; border-radius: 22px; font-size: 13px; font-weight: 600; color: #98989f; cursor: pointer; white-space: nowrap; transition: 0.2s; }
+        .chip.active { background: linear-gradient(135deg, #ff2a5f, #ff5e62); color: #fff; border-color: transparent; box-shadow: 0 4px 20px rgba(255,42,95,0.4); }
+        .featured-box { width: calc(100% - 40px); max-width: 380px; height: 135px; background: linear-gradient(135deg, #18181c, #26262c); border-radius: 26px; padding: 20px; display: flex; flex-direction: column; justify-content: space-between; border: 1px solid rgba(255,255,255,0.08); box-shadow: 0 12px 35px rgba(0,0,0,0.6); margin: 0 auto 22px auto; position: relative; overflow: hidden; }
+        .feat-title { font-size: 16px; font-weight: 700; color: #fff; margin-bottom: 4px; }
+        .feat-desc { font-size: 12px; color: #98989f; line-height: 1.4; }
+        .feat-btn { background: #ff2a5f; color: white; border: none; padding: 7px 16px; border-radius: 14px; font-size: 11px; font-weight: 700; width: fit-content; cursor: pointer; box-shadow: 0 4px 12px rgba(255,42,95,0.3); }
         .section-header { width: 100%; max-width: 420px; padding: 0 20px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-        .section-title { font-size: 17px; font-weight: 700; color: #fff; letter-spacing: -0.3px; }
+        .section-title { font-size: 18px; font-weight: 700; color: #fff; letter-spacing: -0.3px; }
         .content-area { width: 100%; max-width: 420px; padding: 0 20px; display: flex; flex-direction: column; gap: 10px; }
-        .song-card { display: flex; align-items: center; background: rgba(28, 28, 30, 0.55); backdrop-filter: blur(20px); border-radius: 16px; padding: 8px 12px; gap: 12px; cursor: pointer; border: 1px solid rgba(255,255,255,0.06); }
-        .song-card img { width: 50px; height: 50px; border-radius: 12px; object-fit: cover; }
+        .song-card { display: flex; align-items: center; background: rgba(255, 255, 255, 0.04); backdrop-filter: blur(20px); border-radius: 18px; padding: 9px 12px; gap: 12px; cursor: pointer; border: 1px solid rgba(255,255,255,0.05); transition: 0.2s; }
+        .song-card:active { background: rgba(255, 255, 255, 0.08); transform: scale(0.98); }
+        .song-card img { width: 52px; height: 52px; border-radius: 14px; object-fit: cover; }
         .song-info { flex: 1; overflow: hidden; }
-        .song-title { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 3px; color: #f2f2f7; }
-        .song-artist { font-size: 12px; color: #8e8e93; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .mini-player { display: none; position: fixed; bottom: 95px; left: 50%; transform: translateX(-50%); width: calc(100% - 30px); max-width: 390px; height: 60px; background: rgba(35, 35, 38, 0.9); backdrop-filter: blur(25px); border-radius: 20px; border: 1px solid rgba(250,36,60,0.3); z-index: 999; align-items: center; padding: 0 12px; gap: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.6); }
+        .song-title { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 4px; color: #f5f5f7; }
+        .song-artist { font-size: 12px; color: #98989f; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .mini-player { display: none; position: fixed; bottom: 95px; left: 50%; transform: translateX(-50%); width: calc(100% - 30px); max-width: 390px; height: 62px; background: rgba(24, 24, 28, 0.92); backdrop-filter: blur(30px); border-radius: 22px; border: 1px solid rgba(255,42,95,0.3); z-index: 999; align-items: center; padding: 0 14px; gap: 12px; box-shadow: 0 12px 35px rgba(0,0,0,0.7); }
         .mini-player.active { display: flex; }
-        .mini-img { width: 42px; height: 42px; border-radius: 10px; object-fit: cover; }
+        .mini-img { width: 44px; height: 44px; border-radius: 12px; object-fit: cover; }
         .mini-meta { flex: 1; overflow: hidden; cursor: pointer; }
         .mini-title { font-size: 13px; font-weight: 600; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .mini-artist { font-size: 11px; color: #8e8e93; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .mini-play-btn { background: #fa243c; border: none; width: 36px; height: 36px; border-radius: 50%; color: white; display: flex; align-items: center; justify-content: center; font-size: 14px; cursor: pointer; }
-        .floating-nav { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: calc(100% - 30px); max-width: 390px; height: 65px; background: rgba(28, 28, 30, 0.85); backdrop-filter: blur(30px); border-radius: 35px; border: 1px solid rgba(255,255,255,0.12); display: flex; justify-content: space-around; align-items: center; z-index: 1000; padding: 0 8px; }
-        .nav-item { color: #8e8e93; background: none; border: none; font-size: 13px; font-weight: 600; cursor: pointer; padding: 8px 16px; border-radius: 22px; }
-        .nav-item.active { background: #fa243c; color: #fff; box-shadow: 0 4px 15px rgba(250,36,60,0.4); }
-        .player-view { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(10, 10, 12, 0.96); backdrop-filter: blur(40px); z-index: 2000; flex-direction: column; justify-content: space-between; padding: 40px 20px; }
+        .mini-artist { font-size: 11px; color: #98989f; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .mini-play-btn { background: #ff2a5f; border: none; width: 38px; height: 38px; border-radius: 50%; color: white; display: flex; align-items: center; justify-content: center; font-size: 14px; cursor: pointer; box-shadow: 0 4px 12px rgba(255,42,95,0.4); }
+        .floating-nav { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: calc(100% - 30px); max-width: 390px; height: 66px; background: rgba(22, 22, 26, 0.88); backdrop-filter: blur(35px); border-radius: 36px; border: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-around; align-items: center; z-index: 1000; padding: 0 8px; box-shadow: 0 15px 35px rgba(0,0,0,0.5); }
+        .nav-item { color: #98989f; background: none; border: none; font-size: 13px; font-weight: 600; cursor: pointer; padding: 8px 16px; border-radius: 24px; transition: 0.2s; }
+        .nav-item.active { background: #ff2a5f; color: #fff; box-shadow: 0 4px 18px rgba(255,42,95,0.4); }
+        .player-view { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(8, 8, 10, 0.97); backdrop-filter: blur(40px); z-index: 2000; flex-direction: column; justify-content: space-between; padding: 45px 22px; }
         .player-view.active { display: flex; }
         .player-top { display: flex; justify-content: space-between; align-items: center; width: 100%; }
-        .player-btn-action { color: #fa243c; background: rgba(250,36,60,0.1); border: 1px solid rgba(250,36,60,0.25); padding: 7px 15px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; }
-        .artwork-box { width: 260px; height: 260px; margin: 0 auto; border-radius: 26px; overflow: hidden; background: #1c1c1e; border: 1px solid rgba(255,255,255,0.1); }
+        .player-btn-action { color: #ff2a5f; background: rgba(255,42,95,0.1); border: 1px solid rgba(255,42,95,0.25); padding: 7px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; }
+        .artwork-box { width: 270px; height: 270px; margin: 0 auto; border-radius: 28px; overflow: hidden; background: #18181c; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 20px 40px rgba(0,0,0,0.6); }
         .artwork-box img { width: 100%; height: 100%; object-fit: cover; }
         .player-meta { width: 100%; padding: 0 5px; }
-        .m-title { font-size: 18px; font-weight: 700; color: #fff; margin-bottom: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .m-artist { font-size: 14px; color: #8e8e93; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        audio { width: 100%; height: 42px; border-radius: 21px; outline: none; }
+        .m-title { font-size: 19px; font-weight: 700; color: #fff; margin-bottom: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .m-artist { font-size: 14px; color: #98989f; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        audio { width: 100%; height: 44px; border-radius: 22px; outline: none; }
         .related-box { max-height: 140px; overflow-y: auto; width: 100%; display: flex; flex-direction: column; gap: 8px; scrollbar-width: none; }
-        .search-modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(8, 8, 10, 0.95); backdrop-filter: blur(30px); z-index: 1500; flex-direction: column; padding: 25px 20px; }
+        .search-modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(6, 6, 8, 0.96); backdrop-filter: blur(35px); z-index: 1500; flex-direction: column; padding: 25px 20px; }
         .search-modal.active { display: flex; }
         .search-bar-row { display: flex; gap: 10px; width: 100%; margin-bottom: 20px; }
-        .search-input-box { flex: 1; background: rgba(28, 28, 30, 0.8); border: 1px solid rgba(255,255,255,0.1); border-radius: 24px; padding: 10px 18px; color: white; outline: none; font-size: 15px; }
-        .close-search { background: none; border: none; color: #fa243c; font-weight: 600; font-size: 15px; cursor: pointer; }
+        .search-input-box { flex: 1; background: rgba(255, 255, 255, 0.07); border: 1px solid rgba(255,255,255,0.12); border-radius: 26px; padding: 12px 20px; color: white; outline: none; font-size: 15px; }
+        .close-search { background: none; border: none; color: #ff2a5f; font-weight: 600; font-size: 15px; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -105,7 +107,7 @@ UI_TEMPLATE = """
     <div class="featured-box">
         <div>
             <div class="feat-title">Music for Your Mood</div>
-            <div class="feat-desc">Soundtracks that match your vibe. Automatically tailored for you.</div>
+            <div class="feat-desc">Soundtracks that match your vibe. Fast & smooth playback.</div>
         </div>
         <button class="feat-btn" onclick="loadRecommended()">Explore Beats</button>
     </div>
@@ -130,7 +132,7 @@ UI_TEMPLATE = """
     <div class="player-view" id="playerOverlay">
         <div class="player-top">
             <button class="player-btn-action" onclick="closePlayer()">Minimize</button>
-            <span style="font-size: 12px; font-weight: 600; color: #8e8e93;">NOW PLAYING</span>
+            <span style="font-size: 12px; font-weight: 600; color: #98989f; letter-spacing: 1px;">NOW PLAYING</span>
             <button class="player-btn-action" onclick="saveCurrentSong()">Save</button>
         </div>
         <div class="artwork-box"><img id="player-img" src="" alt="Art"></div>
@@ -159,7 +161,7 @@ UI_TEMPLATE = """
         function loadRecommended() {
             document.getElementById('sec-title').innerText = "Recommended For You";
             let area = document.getElementById('main-content-area');
-            area.innerHTML = '<div style="color: #8e8e93; text-align: center; padding: 40px; font-size: 13px;">Curating your playlist...</div>';
+            area.innerHTML = '<div style="color: #98989f; text-align: center; padding: 40px; font-size: 13px;">Loading beats...</div>';
             fetch('/get-home').then(res => res.json()).then(data => { renderSongList(data, area); });
         }
         function filterCategory(cat, element) {
@@ -172,7 +174,7 @@ UI_TEMPLATE = """
             if(cat === 'Remix') query = "bass boosted remix songs";
             let area = document.getElementById('main-content-area');
             document.getElementById('sec-title').innerText = cat + " Selection";
-            area.innerHTML = '<div style="color: #8e8e93; text-align: center; padding: 40px; font-size: 13px;">Loading...</div>';
+            area.innerHTML = '<div style="color: #98989f; text-align: center; padding: 40px; font-size: 13px;">Loading...</div>';
             fetch('/search', { method: 'POST', headers: {'Content-Type': 'application/x-www-form-urlencoded'}, body: 'query=' + encodeURIComponent(query) }).then(res => res.json()).then(data => { renderSongList(data, area); });
         }
         function switchTab(tabName, btnElement) {
@@ -191,12 +193,12 @@ UI_TEMPLATE = """
             let q = document.getElementById('query-input').value.trim();
             if(!q) return;
             let area = document.getElementById('search-results-area');
-            area.innerHTML = '<div style="color: #8e8e93; text-align: center; padding: 40px; font-size: 13px;">Searching fast...</div>';
+            area.innerHTML = '<div style="color: #98989f; text-align: center; padding: 40px; font-size: 13px;">Searching...</div>';
             fetch('/search', { method: 'POST', headers: {'Content-Type': 'application/x-www-form-urlencoded'}, body: 'query=' + encodeURIComponent(q) }).then(res => res.json()).then(data => { renderSongList(data, area); });
         }
         function renderSongList(items, container) {
             container.innerHTML = '';
-            if(!items || items.length === 0) { container.innerHTML = '<div style="color: #8e8e93; text-align: center; padding: 40px; font-size: 13px;">No songs found.</div>'; return; }
+            if(!items || items.length === 0) { container.innerHTML = '<div style="color: #98989f; text-align: center; padding: 40px; font-size: 13px;">No songs found.</div>'; return; }
             items.forEach((item) => {
                 let card = document.createElement('div');
                 card.className = 'song-card';
@@ -207,7 +209,7 @@ UI_TEMPLATE = """
         }
         function playSong(url) {
             fetch('/play?url=' + encodeURIComponent(url)).then(res => res.json()).then(data => {
-                if(data.error) { alert("Error playing song"); return; }
+                if(data.error) { alert("Error playing song. Try another track."); return; }
                 currentSongData = data;
                 document.getElementById('player-title').innerText = data.title;
                 document.getElementById('player-artist').innerText = data.channel;
@@ -220,7 +222,7 @@ UI_TEMPLATE = """
                 audio.play();
                 document.getElementById('miniPlayer').classList.add('active');
                 loadRelated(data.title);
-            });
+            }).catch(err => { alert("Network error playing song."); });
         }
         function loadRelated(query) {
             fetch('/search', { method: 'POST', headers: {'Content-Type': 'application/x-www-form-urlencoded'}, body: 'query=' + encodeURIComponent(query + " remix live") }).then(res => res.json()).then(data => {
@@ -268,7 +270,7 @@ def search():
             'extract_flat': True,
             'quiet': True,
             'no_warnings': True,
-            'extractor_args': {'youtube': {'player_client': ['ios', 'web']}}
+            'extractor_args': {'youtube': {'player_client': ['ios', 'android']}}
         }
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(f"ytsearch6:{query}", download=False)
@@ -287,12 +289,12 @@ def play():
     video_url = request.args.get('url')
     try:
         ydl_opts = {
-            'format': 'bestaudio',
+            'format': 'bestaudio/best',
             'quiet': True,
             'no_warnings': True,
             'noplaylist': True,
-            'extractor_args': {'youtube': {'player_client': ['ios', 'web']}},
-            'socket_timeout': 15
+            'extractor_args': {'youtube': {'player_client': ['ios', 'android']}},
+            'socket_timeout': 10
         }
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(video_url, download=False)
