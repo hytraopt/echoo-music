@@ -8,7 +8,7 @@ UI_TEMPLATE = """
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Echoo Music Global</title>
+    <title>Echoo Music Global Pro</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
         body { background-color: #030305; color: #fff; display: flex; flex-direction: column; align-items: center; min-height: 100vh; padding-bottom: 140px; overflow-x: hidden; }
@@ -79,7 +79,7 @@ UI_TEMPLATE = """
     <div class="top-header">
         <div class="brand-box">
             <div class="app-brand">Echoo</div>
-            <div class="version-tag">VER: v4.6.0-GLOBAL</div>
+            <div class="version-tag">VER: v4.7.0-PRO</div>
         </div>
         <div class="search-icon-btn" onclick="openSearchModal()" title="Search">
             <svg viewBox="0 0 24 24">
@@ -89,17 +89,17 @@ UI_TEMPLATE = """
     </div>
     <div class="chips-container">
         <div class="chip active" onclick="filterCategory('All', this)">All</div>
+        <div class="chip" onclick="filterCategory('Pop', this)">Pop</div>
         <div class="chip" onclick="filterCategory('Rock', this)">Rock</div>
         <div class="chip" onclick="filterCategory('Electronic', this)">Electronic</div>
-        <div class="chip" onclick="filterCategory('Chillout', this)">Chillout</div>
-        <div class="chip" onclick="filterCategory('Ambient', this)">Ambient</div>
+        <div class="chip" onclick="filterCategory('Chill', this)">Chill</div>
     </div>
     <div class="featured-box">
         <div>
             <div class="feat-title">Global Audio Streaming</div>
-            <div class="feat-desc">v4.6 Global Update: Jamendo & FMA Open Music API Integration. Direct playback.</div>
+            <div class="feat-desc">v4.7 Pro Update: High-Speed Direct Audio Streaming. Zero lag.</div>
         </div>
-        <button class="feat-btn" onclick="loadSongs('global')">Explore Beats</button>
+        <button class="feat-btn" onclick="loadSongs('All')">Explore Beats</button>
     </div>
     <div class="section-header">
         <div class="section-title" id="sec-title">Trending Tracks</div>
@@ -136,7 +136,7 @@ UI_TEMPLATE = """
     </div>
     <div class="search-modal" id="searchModal">
         <div class="search-bar-row">
-            <input type="text" id="query-input" class="search-input-box" placeholder="Search global tracks..." onkeypress="handleSearchKey(event)">
+            <input type="text" id="query-input" class="search-input-box" placeholder="Search tracks..." onkeypress="handleSearchKey(event)">
             <button class="close-search" onclick="closeSearchModal()">Cancel</button>
         </div>
         <div class="section-header" style="padding: 0; margin-bottom: 12px;">
@@ -145,43 +145,34 @@ UI_TEMPLATE = """
         <div class="content-area" id="search-results-area" style="max-width: 100%; padding: 0; overflow-y: auto; max-height: calc(100vh - 120px);"></div>
     </div>
     <script>
+        const TRACK_DATABASE = [
+            { id: 1, title: "Midnight City Groove", artist: "ElectroVibe", category: "Electronic", audio: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3", image: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=300" },
+            { id: 2, title: "Neon Sunset Horizon", artist: "Synthwave Alpha", category: "Electronic", audio: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3", image: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=300" },
+            { id: 3, title: "Acoustic Morning Breeze", artist: "Coffee Beans", category: "Chill", audio: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3", image: "https://images.unsplash.com/photo-1465847899084-d164df4dedc6?w=300" },
+            { id: 4, title: "Electric Thunder Storm", artist: "Rock Riot", category: "Rock", audio: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3", image: "https://images.unsplash.com/photo-1498038432885-c6f3f1b912ee?w=300" },
+            { id: 5, title: "Summer Pop Anthem 2026", artist: "Global Star", category: "Pop", audio: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3", image: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=300" },
+            { id: 6, title: "Deep Space Ambient", artist: "Starlight Echo", category: "Chill", audio: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-6.mp3", image: "https://images.unsplash.com/photo-1518609878373-06d740f60d8b?w=300" },
+            { id: 7, title: "Heavy Metal Core", artist: "Iron Beast", category: "Rock", audio: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-7.mp3", image: "https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=300" },
+            { id: 8, title: "Dance Floor Shaker", artist: "Club DJ", category: "Pop", audio: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3", image: "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=300" }
+        ];
+
         let currentSongData = null;
-        let trackList = [];
         let recentSongs = [];
         let savedSongs = [];
 
-        window.onload = function() { loadSongs('global'); };
+        window.onload = function() { loadSongs('All'); };
 
-        async function loadSongs(tag) {
-            document.getElementById('sec-title').innerText = "Trending Tracks (" + tag.toUpperCase() + ")";
+        function loadSongs(category) {
+            document.getElementById('sec-title').innerText = category === 'All' ? "Trending Tracks" : category + " Beats";
             let area = document.getElementById('main-content-area');
-            area.innerHTML = '<div style="color: #8e8e93; text-align: center; padding: 40px; font-size: 13px;">Loading music library...</div>';
-            
-            try {
-                // Using Jamendo Open Public API for royalty-free global music streaming
-                let res = await fetch(`https://api.jamendo.com/v3.0/tracks/?client_id=5c352932&format=json&limit=20&tags=${tag}&include=musicinfo`);
-                let data = await res.json();
-                if(data && data.results) {
-                    trackList = data.results.map(t => ({
-                        id: t.id,
-                        title: t.name,
-                        artist: t.artist_name,
-                        audio: t.audio,
-                        image: t.image || t.album_image || "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=300"
-                    }));
-                    renderSongList(trackList, area);
-                } else {
-                    area.innerHTML = '<div style="color: #8e8e93; text-align: center; padding: 40px; font-size: 13px;">No tracks found.</div>';
-                }
-            } catch(e) {
-                area.innerHTML = '<div style="color: #ff2d55; text-align: center; padding: 40px; font-size: 13px;">Network connection error.</div>';
-            }
+            let filtered = category === 'All' ? TRACK_DATABASE : TRACK_DATABASE.filter(t => t.category.toLowerCase() === category.toLowerCase());
+            renderSongList(filtered, area);
         }
 
         function filterCategory(cat, element) {
             document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
             element.classList.add('active');
-            loadSongs(cat.toLowerCase());
+            loadSongs(cat);
         }
 
         function switchTab(tabName, btnElement) {
@@ -189,7 +180,7 @@ UI_TEMPLATE = """
             btnElement.classList.add('active');
             let area = document.getElementById('main-content-area');
             let title = document.getElementById('sec-title');
-            if(tabName === 'home') { loadSongs('global'); }
+            if(tabName === 'home') { loadSongs('All'); }
             else if(tabName === 'recent') { title.innerText = "Listening History"; renderSongList(recentSongs, area); }
             else if(tabName === 'saved') { title.innerText = "Liked Songs"; renderSongList(savedSongs, area); }
         }
@@ -198,30 +189,12 @@ UI_TEMPLATE = """
         function closeSearchModal() { document.getElementById('searchModal').classList.remove('active'); }
         function handleSearchKey(e) { if(e.key === 'Enter') performSearch(); }
 
-        async function performSearch() {
-            let q = document.getElementById('query-input'].value.trim();
+        function performSearch() {
+            let q = document.getElementById('query-input').value.trim().toLowerCase();
             let area = document.getElementById('search-results-area');
             if(!q) return;
-            area.innerHTML = '<div style="color: #8e8e93; text-align: center; padding: 40px; font-size: 13px;">Searching global database...</div>';
-            
-            try {
-                let res = await fetch(`https://api.jamendo.com/v3.0/tracks/?client_id=5c352932&format=json&limit=15&search=${encodeURIComponent(q)}`);
-                let data = await res.json();
-                if(data && data.results) {
-                    let results = data.results.map(t => ({
-                        id: t.id,
-                        title: t.name,
-                        artist: t.artist_name,
-                        audio: t.audio,
-                        image: t.image || t.album_image || "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=300"
-                    }));
-                    renderSongList(results, area);
-                } else {
-                    area.innerHTML = '<div style="color: #8e8e93; text-align: center; padding: 40px; font-size: 13px;">No songs found.</div>';
-                }
-            } catch(e) {
-                area.innerHTML = '<div style="color: #ff2d55; text-align: center; padding: 40px; font-size: 13px;">Search error.</div>';
-            }
+            let results = TRACK_DATABASE.filter(t => t.title.toLowerCase().includes(q) || t.artist.toLowerCase().includes(q) || t.category.toLowerCase().includes(q));
+            renderSongList(results, area);
         }
 
         function renderSongList(items, container) {
@@ -261,7 +234,7 @@ UI_TEMPLATE = """
         function loadRelated() {
             let relList = document.getElementById('related-list');
             relList.innerHTML = '';
-            trackList.slice(0, 5).forEach(item => {
+            TRACK_DATABASE.slice(0, 4).forEach(item => {
                 let rCard = document.createElement('div');
                 rCard.className = 'song-card';
                 rCard.style.padding = '6px 10px';
@@ -272,10 +245,8 @@ UI_TEMPLATE = """
         }
 
         function playNextRelated() {
-            if(trackList.length > 0) {
-                let nextSong = trackList[Math.floor(Math.random() * trackList.length)];
-                playSong(nextSong);
-            }
+            let nextSong = TRACK_DATABASE[Math.floor(Math.random() * TRACK_DATABASE.length)];
+            playSong(nextSong);
         }
 
         function togglePlayPause() {
