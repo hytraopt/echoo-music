@@ -1,39 +1,47 @@
 from flask import Flask, render_template_string, request, jsonify
-import yt_dlp
-import os
 import urllib.request
 import json
+import os
 
 app = Flask(__name__)
 
 recent_songs = []
 saved_songs = []
-home_recommendations = []
 
-def fetch_home_recommendations():
-    global home_recommendations
-    if home_recommendations:
-        return home_recommendations
-    try:
-        ydl_opts = {
-            'extract_flat': True,
-            'quiet': True,
-            'no_warnings': True,
-        }
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info("ytsearch10:top global hits popular songs audio", download=False)
-            results = []
-            for entry in info.get('entries', []):
-                v_id = entry.get('id')
-                url = entry.get('url') or f"https://www.youtube.com/watch?v={v_id}"
-                title = entry.get('title') or "Popular Track"
-                thumbnail = entry.get('thumbnail') or f"https://i.ytimg.com/vi/{v_id}/hqdefault.jpg"
-                channel = entry.get('uploader') or entry.get('channel') or "YouTube"
-                results.append({"title": title, "url": url, "thumbnail": thumbnail, "channel": channel, "id": v_id})
-            home_recommendations = results
-    except Exception as e:
-        print("Home Error:", str(e))
-    return home_recommendations
+# Reliable public Piped/Invidious API mirrors for uninterrupted audio extraction
+API_INSTANCES = [
+    "https://pipedapi.kavin.rocks",
+    "https://vid.puffyan.us",
+    "https://invidious.privacyredirect.com"
+]
+
+def search_public_api(query):
+    for instance in API_INSTANCES:
+        try:
+            url = f"{instance}/search?q={urllib.parse.quote(query)}&filter=music_songs"
+            req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+            with urllib.request.urlopen(req, timeout=4) as response:
+                data = json.loads(response.read().decode())
+                results = []
+                items = data.get('items', data) if isinstance(data, list) or 'items' in data else []
+                for item in items[:10]:
+                    v_id = item.get('videoId') or item.get('id')
+                    title = item.get('title')
+                    thumbnail = item.get('thumbnail') or f"https://i.ytimg.com/vi/{v_id}/hqdefault.jpg"
+                    channel = item.get('uploader') or item.get('author') or "YouTube"
+                    if v_id and title:
+                        results.append({
+                            "title": title,
+                            "url": f"https://www.youtube.com/watch?v={v_id}",
+                            "thumbnail": thumbnail,
+                            "channel": channel,
+                            "id": v_id
+                        })
+                if results:
+                    return results
+        except Exception:
+            continue
+    return []
 
 UI_TEMPLATE = """
 <!DOCTYPE html>
@@ -41,7 +49,7 @@ UI_TEMPLATE = """
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Echoo Liquid Glass</title>
+    <title>Echoo Music Pro</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
         body { background-color: #030305; color: #fff; display: flex; flex-direction: column; align-items: center; min-height: 100vh; padding-bottom: 140px; overflow-x: hidden; }
@@ -124,7 +132,7 @@ UI_TEMPLATE = """
     <div class="featured-box">
         <div>
             <div class="feat-title">Liquid Glass Experience</div>
-            <div class="feat-desc">Seamless glassmorphism UI, high-speed fluid playback.</div>
+            <div class="feat-desc">Direct Piped API Mirror integration. Zero blocking.</div>
         </div>
         <button class="feat-btn" onclick="loadRecommended()">Explore Beats</button>
     </div>
@@ -220,12 +228,11 @@ UI_TEMPLATE = """
                 let card = document.createElement('div');
                 card.className = 'song-card';
                 card.innerHTML = `<img src="${item.thumbnail}" alt="Art"><div class="song-info"><div class="song-title">${item.title}</div><div class="song-artist">${item.channel}</div></div>`;
-                card.onclick = () => { playSong(item.url, item.title, item.thumbnail, item.channel); closeSearchModal(); };
+                card.onclick = () => { playSong(item.id, item.title, item.thumbnail, item.channel); closeSearchModal(); };
                 container.appendChild(card);
             });
         }
-        function playSong(url, title, thumbnail, channel) {
-            // Instant UI update so user sees metadata immediately
+        function playSong(id, title, thumbnail, channel) {
             document.getElementById('player-title').innerText = title;
             document.getElementById('player-artist').innerText = channel;
             document.getElementById('player-img').src = thumbnail;
@@ -233,29 +240,18 @@ UI_TEMPLATE = """
             document.getElementById('mini-artist').innerText = channel;
             document.getElementById('mini-img').src = thumbnail;
 
-            fetch('/play?url=' + encodeURIComponent(url)).then(res => res.json()).then(data => {
-                if(data.error) { alert("Error playing song. Try another track."); return; }
+            fetch('/play?id=' + encodeURIComponent(id)).then(res => res.json()).then(data => {
+                if(data.error) { alert("Error playing song."); return; }
                 currentSongData = data;
-                let finalTitle = data.title || title;
-                let finalArtist = data.channel || channel;
-                let finalThumb = data.thumbnail || thumbnail;
-
-                document.getElementById('player-title').innerText = finalTitle;
-                document.getElementById('player-artist').innerText = finalArtist;
-                document.getElementById('player-img').src = finalThumb;
-                document.getElementById('mini-title').innerText = finalTitle;
-                document.getElementById('mini-artist').innerText = finalArtist;
-                document.getElementById('mini-img').src = finalThumb;
-
                 let audio = document.getElementById('audioElement');
                 audio.src = data.url;
                 audio.play();
                 document.getElementById('miniPlayer').classList.add('active');
-                loadRelated(finalTitle);
+                loadRelated(title);
             }).catch(err => { alert("Network error playing song."); });
         }
         function loadRelated(query) {
-            fetch('/search', { method: 'POST', headers: {'Content-Type': 'application/x-www-form-urlencoded'}, body: 'query=' + encodeURIComponent(query + " remix live") }).then(res => res.json()).then(data => {
+            fetch('/search', { method: 'POST', headers: {'Content-Type': 'application/x-www-form-urlencoded'}, body: 'query=' + encodeURIComponent(query + " remix") }).then(res => res.json()).then(data => {
                 relatedQueue = data;
                 let relList = document.getElementById('related-list');
                 relList.innerHTML = '';
@@ -264,12 +260,12 @@ UI_TEMPLATE = """
                     rCard.className = 'song-card';
                     rCard.style.padding = '6px 10px';
                     rCard.innerHTML = `<img src="${item.thumbnail}" style="width: 38px; height: 38px;" alt="Art"><div class="song-info"><div class="song-title" style="font-size: 13px;">${item.title}</div></div>`;
-                    rCard.onclick = () => playSong(item.url, item.title, item.thumbnail, item.channel);
+                    rCard.onclick = () => playSong(item.id, item.title, item.thumbnail, item.channel);
                     relList.appendChild(rCard);
                 });
             });
         }
-        function playNextRelated() { if(relatedQueue.length > 0) { let nextSong = relatedQueue.shift(); playSong(nextSong.url, nextSong.title, nextSong.thumbnail, nextSong.channel); } }
+        function playNextRelated() { if(relatedQueue.length > 0) { let nextSong = relatedQueue.shift(); playSong(nextSong.id, nextSong.title, nextSong.thumbnail, nextSong.channel); } }
         function togglePlayPause() { let audio = document.getElementById('audioElement'); if(audio.paused) { audio.play(); } else { audio.pause(); } }
         function updatePlayState(isPlaying) { let btn = document.getElementById('miniPlayBtn'); btn.innerText = isPlaying ? '❚❚' : '▶'; }
         function saveCurrentSong() {
@@ -289,113 +285,48 @@ def index():
 
 @app.route('/get-home')
 def get_home():
-    return jsonify(fetch_home_recommendations())
+    return jsonify(search_public_api("top global hits popular songs"))
 
 @app.route('/search', methods=['POST'])
 def search():
     query = request.form.get('query')
-    results = []
-    try:
-        ydl_opts = {
-            'extract_flat': True,
-            'quiet': True,
-            'no_warnings': True,
-        }
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(f"ytsearch6:{query}", download=False)
-            for entry in info.get('entries', []):
-                v_id = entry.get('id')
-                url = entry.get('url') or f"https://www.youtube.com/watch?v={v_id}"
-                title = entry.get('title') or "Track"
-                thumbnail = entry.get('thumbnail') or f"https://i.ytimg.com/vi/{v_id}/hqdefault.jpg"
-                channel = entry.get('uploader') or entry.get('channel') or "YouTube"
-                results.append({"title": title, "url": url, "thumbnail": thumbnail, "channel": channel, "id": v_id})
-    except Exception as e:
-        print("Search Error:", str(e))
-    return jsonify(results)
+    return jsonify(search_public_api(query))
 
 @app.route('/play')
 def play():
-    video_url = request.args.get('url')
-    try:
-        v_id = ""
-        if "watch?v=" in video_url:
-            v_id = video_url.split("watch?v=")[1].split("&")[0]
-        elif "youtu.be/" in video_url:
-            v_id = video_url.split("youtu.be/")[1].split("?")[0]
-        elif len(video_url) == 11:
-            v_id = video_url
+    v_id = request.args.get('id')
+    audio_url = None
+    
+    # Try fetching stream from public Piped/Invidious mirrors
+    for instance in API_INSTANCES:
+        try:
+            url = f"{instance}/streams/{v_id}"
+            req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+            with urllib.request.urlopen(req, timeout=5) as response:
+                data = json.loads(response.read().decode())
+                audio_streams = data.get('audioStreams', [])
+                if audio_streams:
+                    # Pick the best audio stream URL
+                    audio_url = audio_streams[0].get('url')
+                    break
+        except Exception:
+            continue
 
-        song_title = "Echoo Track"
-        song_thumbnail = f"https://i.ytimg.com/vi/{v_id}/hqdefault.jpg" if v_id else ""
-        song_channel = "YouTube"
-        audio_url = None
+    if not audio_url:
+        return jsonify({"error": "Stream unavailable"})
 
-        ydl_opts = {
-            'format': 'bestaudio/best',
-            'quiet': True,
-            'no_warnings': True,
-            'noplaylist': True,
-            'geo_bypass': True,
-            'socket_timeout': 8
-        }
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            try:
-                info = ydl.extract_info(video_url, download=False)
-                song_title = info.get('title') or song_title
-                song_thumbnail = info.get('thumbnail') or song_thumbnail
-                song_channel = info.get('uploader') or info.get('channel') or song_channel
-                audio_url = info.get('url')
-                if not audio_url and 'formats' in info:
-                    for f in info['formats']:
-                        if f.get('acodec') != 'none' and f.get('url'):
-                            audio_url = f.get('url')
-                            break
-            except Exception:
-                pass
+    song_data = {
+        "title": "Playing Track",
+        "url": audio_url,
+        "thumbnail": f"https://i.ytimg.com/vi/{v_id}/hqdefault.jpg",
+        "channel": "YouTube"
+    }
 
-        # Invidious Public API Mirror fallback
-        if not audio_url and v_id:
-            try:
-                api_url = f"https://inv.tux.im/api/v1/videos/{v_id}"
-                req = urllib.request.Request(api_url, headers={'User-Agent': 'Mozilla/5.0'})
-                with urllib.request.urlopen(req, timeout=5) as response:
-                    res_data = json.loads(response.read().decode())
-                    song_title = res_data.get('title') or song_title
-                    song_channel = res_data.get('author') or song_channel
-                    if res_data.get('videoStreams'):
-                        for stream in res_data['videoStreams']:
-                            if stream.get('type') == 'audio' or 'audio' in stream.get('quality', '').lower():
-                                audio_url = stream.get('url')
-                                break
-                    if not audio_url and res_data.get('adaptiveFormats'):
-                        for fmt in res_data['adaptiveFormats']:
-                            if 'audio' in fmt.get('type', ''):
-                                audio_url = fmt.get('url')
-                                break
-            except Exception as api_e:
-                print("API Fallback Error:", str(api_e))
-
-        if not audio_url and v_id:
-            audio_url = f"https://rr1---sn-oxuxgnsz.googlevideo.com/videoplayback?expire=3744144000&ei=A3XpW4_...&id={v_id}"
-
-        if not audio_url:
-            return jsonify({"error": "Unable to fetch stream."})
-
-        song_data = {
-            "title": song_title,
-            "url": audio_url,
-            "thumbnail": song_thumbnail,
-            "channel": song_channel
-        }
-
-        if song_data not in recent_songs:
-            recent_songs.insert(0, song_data)
-            if len(recent_songs) > 15: recent_songs.pop()
-        return jsonify(song_data)
-    except Exception as e:
-        print("Play Route Fatal Error:", str(e))
-        return jsonify({"error": str(e)})
+    if song_data not in recent_songs:
+        recent_songs.insert(0, song_data)
+        if len(recent_songs) > 15: recent_songs.pop()
+        
+    return jsonify(song_data)
 
 @app.route('/get-recent')
 def get_recent():
