@@ -17,7 +17,7 @@ def fetch_home_recommendations():
             'extract_flat': True,
             'quiet': True,
             'no_warnings': True,
-            'extractor_args': {'youtube': {'player_client': ['ios', 'android']}}
+            'extractor_args': {'youtube': {'player_client': ['web', 'mweb', 'ios', 'android']}}
         }
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info("ytsearch10:top global hits popular songs audio", download=False)
@@ -44,33 +44,26 @@ UI_TEMPLATE = """
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
         body { background-color: #030305; color: #fff; display: flex; flex-direction: column; align-items: center; min-height: 100vh; padding-bottom: 140px; overflow-x: hidden; }
         
-        /* Top Header */
         .top-header { width: 100%; max-width: 420px; padding: 24px 20px 14px 20px; display: flex; justify-content: space-between; align-items: center; }
         .app-brand { font-size: 28px; font-weight: 900; letter-spacing: -0.8px; background: linear-gradient(135deg, #ff2d55, #ff9500); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
         
-        /* Liquid Glass Search Icon Button */
         .search-icon-btn { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border: 1px solid rgba(255, 255, 255, 0.12); width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: transform 0.2s, background 0.2s; box-shadow: 0 8px 32px rgba(0,0,0,0.3); }
         .search-icon-btn:active { transform: scale(0.92); background: rgba(255, 255, 255, 0.1); }
         .search-icon-btn svg { width: 20px; height: 20px; fill: #ff2d55; }
 
-        /* Liquid Glass Chips */
         .chips-container { width: 100%; max-width: 420px; padding: 0 20px; display: flex; gap: 10px; margin-bottom: 20px; overflow-x: auto; scrollbar-width: none; }
         .chips-container::-webkit-scrollbar { display: none; }
         .chip { background: rgba(255, 255, 255, 0.04); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.08); padding: 8px 18px; border-radius: 20px; font-size: 13px; font-weight: 600; color: #8e8e93; cursor: pointer; white-space: nowrap; transition: 0.2s; }
         .chip.active { background: linear-gradient(135deg, rgba(255,45,85,0.8), rgba(255,149,0,0.8)); backdrop-filter: blur(30px); color: #fff; border-color: rgba(255,255,255,0.2); box-shadow: 0 8px 25px rgba(255,45,85,0.35); }
 
-        /* Liquid Glass Featured Box */
         .featured-box { width: calc(100% - 40px); max-width: 380px; height: 145px; background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px); border-radius: 28px; padding: 22px; display: flex; flex-direction: column; justify-content: space-between; border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 20px 40px rgba(0,0,0,0.5); margin: 0 auto 24px auto; position: relative; overflow: hidden; }
-        .featured-box::before { content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(circle, rgba(255,255,255,0.05) 0%, transparent 60%); pointer-events: none; }
         .feat-title { font-size: 18px; font-weight: 800; color: #fff; margin-bottom: 4px; letter-spacing: -0.3px; }
         .feat-desc { font-size: 12px; color: #aeaeb2; line-height: 1.4; }
         .feat-btn { background: #ff2d55; color: white; border: none; padding: 8px 18px; border-radius: 14px; font-size: 12px; font-weight: 700; width: fit-content; cursor: pointer; box-shadow: 0 6px 20px rgba(255,45,85,0.4); }
 
-        /* Section Header */
         .section-header { width: 100%; max-width: 420px; padding: 0 20px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
         .section-title { font-size: 19px; font-weight: 800; color: #fff; letter-spacing: -0.5px; }
 
-        /* Content & Liquid Glass Song Cards */
         .content-area { width: 100%; max-width: 420px; padding: 0 20px; display: flex; flex-direction: column; gap: 12px; }
         .song-card { display: flex; align-items: center; background: rgba(255, 255, 255, 0.035); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border-radius: 20px; padding: 10px 14px; gap: 14px; cursor: pointer; border: 1px solid rgba(255, 255, 255, 0.07); transition: background 0.2s, transform 0.1s; box-shadow: 0 8px 30px rgba(0,0,0,0.2); }
         .song-card:active { background: rgba(255, 255, 255, 0.08); transform: scale(0.98); }
@@ -79,7 +72,6 @@ UI_TEMPLATE = """
         .song-title { font-size: 15px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 4px; color: #f2f2f7; }
         .song-artist { font-size: 13px; color: #8e8e93; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500; }
 
-        /* Liquid Glass Mini Player */
         .mini-player { display: none; position: fixed; bottom: 98px; left: 50%; transform: translateX(-50%); width: calc(100% - 30px); max-width: 390px; height: 66px; background: rgba(20, 20, 25, 0.75); backdrop-filter: blur(35px); -webkit-backdrop-filter: blur(35px); border-radius: 24px; border: 1px solid rgba(255,45,85,0.3); z-index: 999; align-items: center; padding: 0 14px; gap: 14px; box-shadow: 0 20px 45px rgba(0,0,0,0.8); }
         .mini-player.active { display: flex; }
         .mini-img { width: 46px; height: 46px; border-radius: 12px; object-fit: cover; }
@@ -88,12 +80,10 @@ UI_TEMPLATE = """
         .mini-artist { font-size: 12px; color: #8e8e93; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .mini-play-btn { background: #ff2d55; border: none; width: 40px; height: 40px; border-radius: 50%; color: white; display: flex; align-items: center; justify-content: center; font-size: 15px; cursor: pointer; box-shadow: 0 6px 20px rgba(255,45,85,0.5); }
 
-        /* Liquid Glass Floating Nav Bar */
         .floating-nav { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: calc(100% - 30px); max-width: 390px; height: 68px; background: rgba(18, 18, 22, 0.7); backdrop-filter: blur(40px); -webkit-backdrop-filter: blur(40px); border-radius: 34px; border: 1px solid rgba(255,255,255,0.12); display: flex; justify-content: space-around; align-items: center; z-index: 1000; padding: 0 6px; box-shadow: 0 20px 40px rgba(0,0,0,0.6); }
         .nav-item { color: #8e8e93; background: none; border: none; font-size: 13px; font-weight: 700; cursor: pointer; padding: 8px 18px; border-radius: 22px; transition: 0.2s; }
         .nav-item.active { background: #ff2d55; color: #fff; box-shadow: 0 6px 20px rgba(255,45,85,0.4); }
 
-        /* Fullscreen Glass Player Overlay */
         .player-view { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(5, 5, 8, 0.92); backdrop-filter: blur(60px); -webkit-backdrop-filter: blur(60px); z-index: 2000; flex-direction: column; justify-content: space-between; padding: 45px 24px; }
         .player-view.active { display: flex; }
         .player-top { display: flex; justify-content: space-between; align-items: center; width: 100%; }
@@ -106,7 +96,6 @@ UI_TEMPLATE = """
         audio { width: 100%; height: 46px; border-radius: 23px; outline: none; }
         .related-box { max-height: 150px; overflow-y: auto; width: 100%; display: flex; flex-direction: column; gap: 8px; scrollbar-width: none; }
 
-        /* Glass Search Modal */
         .search-modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(3, 3, 5, 0.94); backdrop-filter: blur(50px); -webkit-backdrop-filter: blur(50px); z-index: 1500; flex-direction: column; padding: 25px 20px; }
         .search-modal.active { display: flex; }
         .search-bar-row { display: flex; gap: 12px; width: 100%; margin-bottom: 22px; }
@@ -117,7 +106,6 @@ UI_TEMPLATE = """
 <body>
     <div class="top-header">
         <div class="app-brand">Echoo</div>
-        <!-- Search Logo SVG without any emoji -->
         <div class="search-icon-btn" onclick="openSearchModal()" title="Search">
             <svg viewBox="0 0 24 24">
                 <path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
@@ -297,7 +285,7 @@ def search():
             'extract_flat': True,
             'quiet': True,
             'no_warnings': True,
-            'extractor_args': {'youtube': {'player_client': ['ios', 'android']}}
+            'extractor_args': {'youtube': {'player_client': ['web', 'mweb', 'ios', 'android']}}
         }
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(f"ytsearch6:{query}", download=False)
@@ -316,21 +304,35 @@ def play():
     video_url = request.args.get('url')
     try:
         ydl_opts = {
-            'format': 'bestaudio/best',
+            'format': 'ba[ext=m4a]/b[ext=mp4]/best',
             'quiet': True,
             'no_warnings': True,
             'noplaylist': True,
-            'extractor_args': {'youtube': {'player_client': ['ios', 'android']}},
-            'socket_timeout': 10
+            'geo_bypass': True,
+            'nocheckcertificate': True,
+            'extractor_args': {'youtube': {'player_client': ['web', 'mweb', 'ios', 'android']}},
+            'socket_timeout': 15
         }
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(video_url, download=False)
+            
+            # Fallback URL selection if direct format url is missing
+            audio_url = info.get('url')
+            if not audio_url and 'formats' in info:
+                for f in info['formats']:
+                    if f.get('acodec') != 'none' and f.get('url'):
+                        audio_url = f.get('url')
+                        break
+
             song_data = {
                 "title": info.get('title'),
-                "url": info.get('url'),
+                "url": audio_url,
                 "thumbnail": info.get('thumbnail'),
                 "channel": info.get('uploader') or info.get('channel') or "YouTube"
             }
+            if not song_data['url']:
+                return jsonify({"error": "Direct audio stream extraction failed."})
+
             if song_data not in recent_songs:
                 recent_songs.insert(0, song_data)
                 if len(recent_songs) > 15: recent_songs.pop()
