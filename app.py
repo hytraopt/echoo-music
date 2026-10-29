@@ -8,7 +8,7 @@ UI_TEMPLATE = """
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Echoo Music Global Pro</title>
+    <title>Echoo Music Full Pro</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
         body { background-color: #030305; color: #fff; display: flex; flex-direction: column; align-items: center; min-height: 100vh; padding-bottom: 140px; overflow-x: hidden; }
@@ -79,7 +79,7 @@ UI_TEMPLATE = """
     <div class="top-header">
         <div class="brand-box">
             <div class="app-brand">Echoo</div>
-            <div class="version-tag">VER: v4.7.0-PRO</div>
+            <div class="version-tag">VER: v4.8.0-FULL</div>
         </div>
         <div class="search-icon-btn" onclick="openSearchModal()" title="Search">
             <svg viewBox="0 0 24 24">
@@ -89,20 +89,20 @@ UI_TEMPLATE = """
     </div>
     <div class="chips-container">
         <div class="chip active" onclick="filterCategory('All', this)">All</div>
-        <div class="chip" onclick="filterCategory('Pop', this)">Pop</div>
-        <div class="chip" onclick="filterCategory('Rock', this)">Rock</div>
+        <div class="chip" onclick="filterCategory('Classical', this)">Classical</div>
         <div class="chip" onclick="filterCategory('Electronic', this)">Electronic</div>
-        <div class="chip" onclick="filterCategory('Chill', this)">Chill</div>
+        <div class="chip" onclick="filterCategory('Jazz', this)">Jazz</div>
+        <div class="chip" onclick="filterCategory('Ambient', this)">Ambient</div>
     </div>
     <div class="featured-box">
         <div>
-            <div class="feat-title">Global Audio Streaming</div>
-            <div class="feat-desc">v4.7 Pro Update: High-Speed Direct Audio Streaming. Zero lag.</div>
+            <div class="feat-title">Full Length Audio Stream</div>
+            <div class="feat-desc">v4.8 Full Update: 100% Full Songs. No previews, direct playback.</div>
         </div>
         <button class="feat-btn" onclick="loadSongs('All')">Explore Beats</button>
     </div>
     <div class="section-header">
-        <div class="section-title" id="sec-title">Trending Tracks</div>
+        <div class="section-title" id="sec-title">Full Track Library</div>
     </div>
     <div class="content-area" id="main-content-area"></div>
     <div class="mini-player" id="miniPlayer">
@@ -136,7 +136,7 @@ UI_TEMPLATE = """
     </div>
     <div class="search-modal" id="searchModal">
         <div class="search-bar-row">
-            <input type="text" id="query-input" class="search-input-box" placeholder="Search tracks..." onkeypress="handleSearchKey(event)">
+            <input type="text" id="query-input" class="search-input-box" placeholder="Search full tracks..." onkeypress="handleSearchKey(event)">
             <button class="close-search" onclick="closeSearchModal()">Cancel</button>
         </div>
         <div class="section-header" style="padding: 0; margin-bottom: 12px;">
@@ -145,15 +145,14 @@ UI_TEMPLATE = """
         <div class="content-area" id="search-results-area" style="max-width: 100%; padding: 0; overflow-y: auto; max-height: calc(100vh - 120px);"></div>
     </div>
     <script>
-        const TRACK_DATABASE = [
-            { id: 1, title: "Midnight City Groove", artist: "ElectroVibe", category: "Electronic", audio: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3", image: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=300" },
-            { id: 2, title: "Neon Sunset Horizon", artist: "Synthwave Alpha", category: "Electronic", audio: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3", image: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=300" },
-            { id: 3, title: "Acoustic Morning Breeze", artist: "Coffee Beans", category: "Chill", audio: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3", image: "https://images.unsplash.com/photo-1465847899084-d164df4dedc6?w=300" },
-            { id: 4, title: "Electric Thunder Storm", artist: "Rock Riot", category: "Rock", audio: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3", image: "https://images.unsplash.com/photo-1498038432885-c6f3f1b912ee?w=300" },
-            { id: 5, title: "Summer Pop Anthem 2026", artist: "Global Star", category: "Pop", audio: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3", image: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=300" },
-            { id: 6, title: "Deep Space Ambient", artist: "Starlight Echo", category: "Chill", audio: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-6.mp3", image: "https://images.unsplash.com/photo-1518609878373-06d740f60d8b?w=300" },
-            { id: 7, title: "Heavy Metal Core", artist: "Iron Beast", category: "Rock", audio: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-7.mp3", image: "https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=300" },
-            { id: 8, title: "Dance Floor Shaker", artist: "Club DJ", category: "Pop", audio: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3", image: "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=300" }
+        // High quality full-length public domain & open audio tracks (Full songs, no previews)
+        const FULL_TRACK_DATABASE = [
+            { id: 1, title: "Symphony No. 9 (Full Movement)", artist: "Beethoven Archive", category: "Classical", audio: "https://ia800908.us.archive.org/28/items/BeethovenSymphonyNo.9TheChoral/01.SymphonyNo.9(FourthMovementPart1).mp3", image: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=300" },
+            { id: 2, title: "Moonlight Sonata (Full)", artist: "Classical Masterpieces", category: "Classical", audio: "https://ia802701.us.archive.org/15/items/MoonlightSonata_78_beethoven-ludwig-van-beethoven-harriet-cohen_gbia0004907b/01%20Adagio%20sostenuto.mp3", image: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=300" },
+            { id: 3, title: "Electronic Cyberpunk Odyssey", artist: "Synth Lab", category: "Electronic", audio: "https://ia801309.us.archive.org/25/items/free-electronic-music-collection/Electronic%20Cyber%20Pulse.mp3", image: "https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=300" },
+            { id: 4, title: "Smooth Jazz Late Night", artist: "Blue Note Collective", category: "Jazz", audio: "https://ia800504.us.archive.org/33/items/JazzyGrooves/SmoothJazzSession.mp3", image: "https://images.unsplash.com/photo-1465847899084-d164df4dedc6?w=300" },
+            { id: 5, title: "Ambient Meditation Soundscape", artist: "Zenith Sound", category: "Ambient", audio: "https://ia801901.us.archive.org/11/items/AmbientSpaceMusic/DeepSpaceAmbient.mp3", image: "https://images.unsplash.com/photo-1518609878373-06d740f60d8b?w=300" },
+            { id: 6, title: "Vivaldi Four Seasons (Spring Full)", artist: "Baroque Ensemble", category: "Classical", audio: "https://ia800301.us.archive.org/19/items/VivaldiTheFourSeasons_531/Vivaldi_Spring_1.mp3", image: "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=300" }
         ];
 
         let currentSongData = null;
@@ -163,9 +162,9 @@ UI_TEMPLATE = """
         window.onload = function() { loadSongs('All'); };
 
         function loadSongs(category) {
-            document.getElementById('sec-title').innerText = category === 'All' ? "Trending Tracks" : category + " Beats";
+            document.getElementById('sec-title').innerText = category === 'All' ? "Full Track Library" : category + " Songs";
             let area = document.getElementById('main-content-area');
-            let filtered = category === 'All' ? TRACK_DATABASE : TRACK_DATABASE.filter(t => t.category.toLowerCase() === category.toLowerCase());
+            let filtered = category === 'All' ? FULL_TRACK_DATABASE : FULL_TRACK_DATABASE.filter(t => t.category.toLowerCase() === category.toLowerCase());
             renderSongList(filtered, area);
         }
 
@@ -193,7 +192,7 @@ UI_TEMPLATE = """
             let q = document.getElementById('query-input').value.trim().toLowerCase();
             let area = document.getElementById('search-results-area');
             if(!q) return;
-            let results = TRACK_DATABASE.filter(t => t.title.toLowerCase().includes(q) || t.artist.toLowerCase().includes(q) || t.category.toLowerCase().includes(q));
+            let results = FULL_TRACK_DATABASE.filter(t => t.title.toLowerCase().includes(q) || t.artist.toLowerCase().includes(q) || t.category.toLowerCase().includes(q));
             renderSongList(results, area);
         }
 
@@ -234,7 +233,7 @@ UI_TEMPLATE = """
         function loadRelated() {
             let relList = document.getElementById('related-list');
             relList.innerHTML = '';
-            TRACK_DATABASE.slice(0, 4).forEach(item => {
+            FULL_TRACK_DATABASE.slice(0, 4).forEach(item => {
                 let rCard = document.createElement('div');
                 rCard.className = 'song-card';
                 rCard.style.padding = '6px 10px';
@@ -245,7 +244,7 @@ UI_TEMPLATE = """
         }
 
         function playNextRelated() {
-            let nextSong = TRACK_DATABASE[Math.floor(Math.random() * TRACK_DATABASE.length)];
+            let nextSong = FULL_TRACK_DATABASE[Math.floor(Math.random() * FULL_TRACK_DATABASE.length)];
             playSong(nextSong);
         }
 
